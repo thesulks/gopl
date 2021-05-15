@@ -8,7 +8,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -31,43 +30,45 @@ func main() {
 		"width='%d' height='%d'>", width, height)
 	for i := 0; i < cells; i++ {
 		for j := 0; j < cells; j++ {
-			ax, ay, az, aErr := corner(i+1, j)
-			bx, by, bz, bErr := corner(i, j)
-			cx, cy, cz, cErr := corner(i, j+1)
-			dx, dy, dz, dErr := corner(i+1, j+1)
-			if aErr != nil || bErr != nil || cErr != nil || dErr != nil {
+			ax, ay, az, aok := corner(i+1, j)
+			bx, by, bz, bok := corner(i, j)
+			cx, cy, cz, cok := corner(i, j+1)
+			dx, dy, dz, dok := corner(i+1, j+1)
+			if !aok || !bok || !cok || !dok {
 				fmt.Fprintln(os.Stderr, "error occured")
 				continue
 			}
 			z := (az + bz + cz + dz) / 4
-			var rgb string
-			if z > 0 {
-				rgb = fmt.Sprintf("rgb(255, %d, %[1]d)", 255-int(z*255))
-			} else {
-				rgb = fmt.Sprintf("rgb(%d, %[1]d, 255)", 255-int(-z*255))
-			}
 			fmt.Printf("<polygon style='fill: %s;' points='%g,%g %g,%g %g,%g %g,%g'/>\n",
-				rgb, ax, ay, bx, by, cx, cy, dx, dy)
+				rgb(z), ax, ay, bx, by, cx, cy, dx, dy)
 		}
 	}
 	fmt.Println("</svg>")
 }
 
-func corner(i, j int) (float64, float64, float64, error) {
+func rgb(z float64) string {
+	if z > 0 {
+		return fmt.Sprintf("rgb(255, %d, %[1]d)", 255-int(z*255))
+	} else {
+		return fmt.Sprintf("rgb(%d, %[1]d, 255)", 255-int(-z*255))
+	}
+}
+
+func corner(i, j int) (float64, float64, float64, bool) {
 	// Find point (x,y) at corner of cell (i,j).
 	x := xyrange * (float64(i)/cells - 0.5)
 	y := xyrange * (float64(j)/cells - 0.5)
 
 	// Compute surface height z.
 	z := f(x, y)
-	if math.IsInf(z, 1) || math.IsInf(z, -1) {
-		return 0, 0, 0, errors.New("infinity value")
+	if math.IsInf(z, 1) || math.IsInf(z, -1) || math.IsNaN(z) {
+		return 0, 0, 0, false
 	}
 
 	// Project (x,y,z) isometrically onto 2-D SVG canvas (sx,sy).
 	sx := width/2 + (x-y)*cos30*xyscale
 	sy := height/2 + (x+y)*sin30*xyscale - z*zscale
-	return sx, sy, z, nil
+	return sx, sy, z, true
 }
 
 func f(x, y float64) float64 {
