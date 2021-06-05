@@ -44,3 +44,19 @@ func TestDiffBitCountSha256(t *testing.T) {
 		}
 	}
 }
+
+func BenchmarkDiffBitCountSha256(b *testing.B) {
+	hashDummy := sha256.Sum256([]byte("dummy"))
+	hashHello := sha256.Sum256([]byte("hello"))
+	for i := 0; i < b.N; i++ {
+		DiffBitCountSha256(hashDummy, hashHello)
+	}
+}
+
+func BenchmarkDiffBitCountSha256Ref(b *testing.B) {
+	hashDummy := sha256.Sum256([]byte("dummy"))
+	hashHello := sha256.Sum256([]byte("hello"))
+	for i := 0; i < b.N; i++ {
+		DiffBitCountSha256Ref(&hashDummy, &hashHello)
+	}
+}

@@ -10,8 +10,15 @@ func init() {
 	}
 }
 
-// TODO: refactor to pointer version
 func DiffBitCountSha256(a, b [sha256.Size]byte) int {
+	var count int
+	for i := range a {
+		count += int(pc[a[i]^b[i]])
+	}
+	return count
+}
+
+func DiffBitCountSha256Ref(a, b *[sha256.Size]byte) int {
 	var count int
 	for i := range a {
 		count += int(pc[a[i]^b[i]])
