@@ -27,10 +27,8 @@ func fetch(url string) (filename string, n int64, err error) {
 	}
 	defer resp.Body.Close()
 
-	// log.Print(resp.Request.URL.String())
-	// log.Print(resp.Request.URL.Path)
 	local := path.Base(resp.Request.URL.Path)
-	if local == "/" {
+	if local == "." || local == "/" {
 		local = "index.html"
 	}
 
@@ -39,9 +37,9 @@ func fetch(url string) (filename string, n int64, err error) {
 		return "", 0, fmt.Errorf("failed to create %s: %v", local, err)
 	}
 	defer func() {
-		closeErr := f.Close()
-		if closeErr != nil {
-			filename, n, err = "", 0, fmt.Errorf("failed to close %s: %v", local, closeErr)
+		// Close file, but prefer error from Copy, if any.
+		if closeErr := f.Close(); closeErr != nil && err == nil {
+			err = fmt.Errorf("failed to close %s: %v", local, closeErr)
 		}
 	}()
 
@@ -49,5 +47,6 @@ func fetch(url string) (filename string, n int64, err error) {
 	if err != nil {
 		return "", 0, fmt.Errorf("failed to copy to %s: %v", local, err)
 	}
+
 	return local, n, nil
 }
