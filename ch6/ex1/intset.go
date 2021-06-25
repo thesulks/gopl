@@ -34,7 +34,7 @@ func (s *IntSet) Clear() {
 }
 
 func (s *IntSet) Copy() *IntSet {
-	copy := &IntSet{make([]uint64, s.Len())}
+	copy := &IntSet{make([]uint64, len(s.words))}
 	for i, word := range s.words {
 		copy.words[i] = word
 	}
