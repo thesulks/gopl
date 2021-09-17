@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -21,6 +22,7 @@ func main() {
 	fmt.Printf("%.2fs elapsed\n", time.Since(start).Seconds())
 }
 
+var mu sync.Mutex
 var id int
 
 func fetch(url string, ch chan<- string) {
@@ -30,8 +32,15 @@ func fetch(url string, ch chan<- string) {
 		ch <- fmt.Sprint(err) // send to channel ch
 		return
 	}
+	mu.Lock()
 	f, err := os.Create(fmt.Sprint(id))
+	if err != nil {
+		ch <- fmt.Sprintf("while creating %d (%s): %v", id, url, err)
+		mu.Unlock()
+		return
+	}
 	id++
+	mu.Unlock()
 	nbytes, err := io.Copy(f, resp.Body)
 	f.Close()
 	resp.Body.Close() // don't leak resources
